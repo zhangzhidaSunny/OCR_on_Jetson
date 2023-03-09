@@ -40,7 +40,8 @@ export ENABLE_PADDLE_BACKEND=ON
 
 export PADDLEINFERENCE_DIRECTORY=/Download/paddle_inference_jetson
 
-
 python setup.py build
+
 python setup.py bdist_wheel
+
 The compiled wheel package will be generated in the FastDeploy/python/dist directory when the compilation is done, just pip install it directly
