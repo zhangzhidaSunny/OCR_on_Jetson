@@ -27,13 +27,19 @@ If you need to integrate the Paddle Inference backend, download the correspondin
 All compilation options are imported via environment variables
 
 git clone https://github.com/PaddlePaddle/FastDeploy.git
+
 cd FastDeploy/python
+
 export BUILD_ON_JETSON=ON
+
 export ENABLE_VISION=ON
 
-# ENABLE_PADDLE_BACKEND & PADDLEINFERENCE_DIRECTORY are optional
+
+##ENABLE_PADDLE_BACKEND & PADDLEINFERENCE_DIRECTORY are optional
 export ENABLE_PADDLE_BACKEND=ON
+
 export PADDLEINFERENCE_DIRECTORY=/Download/paddle_inference_jetson
+
 
 python setup.py build
 python setup.py bdist_wheel
