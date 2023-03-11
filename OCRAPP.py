@@ -53,12 +53,25 @@ class OCRApp(QWidget):
         selButton.clicked.connect(self.showDialog)
         okButton.clicked.connect(self.processOCR)
 
+    def cv_show(self, name, img):
+        cv2.imshow(name,img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
     def showDialog(self):
         fname = QFileDialog.getOpenFileName(self, 'Open file', './pic')
         print(fname[0])
         self.path = fname[0]
         try:
+            img = cv2.imread(fname[0])
+            x, y = img.shape[0:2]
+            resize_img=cv2.resize(img,(640,int(640*x/y)))
+            border=int((x-int(640*x/y))/2)
+            print(border)
+            cImg=cv2.copyMakeBorder(resize_img,int((640-int(640*x/y))/2),int((640-int(640*x/y))/2),0,0,cv2.BORDER_CONSTANT,value=0)
+
+            # self.cv_show("resize",cImg)
+            cv2.imwrite(fname[0], cImg)
             pPic = QPixmap(fname[0])
             height = pPic.height()
             width = pPic.width()
@@ -69,10 +82,7 @@ class OCRApp(QWidget):
             print (Exception.args);
 
 
-    def cv_show(self, name, img):
-        cv2.imshow(name,img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+
 
 
     def processOCR(self):
@@ -85,6 +95,7 @@ class OCRApp(QWidget):
             image = ""
             cls_bs = 1
             rec_bs = 6
+
             device = "cpu"
             cpu_thread_num = 9
             device_id = 0
@@ -92,13 +103,34 @@ class OCRApp(QWidget):
             cls_option = fd.RuntimeOption()
             rec_option = fd.RuntimeOption()
 
-            det_option.set_cpu_thread_num(cpu_thread_num)
-            cls_option.set_cpu_thread_num(cpu_thread_num)
-            rec_option.set_cpu_thread_num(cpu_thread_num)
+            # det_option.set_cpu_thread_num(cpu_thread_num)
+            # cls_option.set_cpu_thread_num(cpu_thread_num)
+            # rec_option.set_cpu_thread_num(cpu_thread_num)
             if self.cb.currentText().lower() =="gpu":
                 det_option.use_gpu(device_id)
                 cls_option.use_gpu(device_id)
                 rec_option.use_gpu(device_id)
+                det_option.use_trt_backend()
+                cls_option.use_trt_backend()
+                rec_option.use_trt_backend()
+
+                # 设置trt input shape
+                # 如果用户想要自己改动检测模型的输入shape, 我们建议用户把检测模型的长和高设置为32的倍数.
+                det_option.set_trt_input_shape("x", [1, 3, 64, 64], [1, 3, 640, 640],
+                                               [1, 3, 960, 960])
+                cls_option.set_trt_input_shape("x", [1, 3, 48, 10],
+                                               [cls_bs, 3, 48, 320],
+                                               [cls_bs, 3, 48, 1024])
+                rec_option.set_trt_input_shape("x", [1, 3, 48, 10],
+                                               [rec_bs, 3, 48, 320],
+                                               [rec_bs, 3, 48, 2304])
+
+                # 用户可以把TRT引擎文件保存至本地
+                det_option.set_trt_cache_file(det_model + "/det_trt_cache.trt")
+                cls_option.set_trt_cache_file(cls_model + "/cls_trt_cache.trt")
+                rec_option.set_trt_cache_file(rec_model + "/rec_trt_cache.trt")
+
+
             # Detection模型, 检测文字框
             det_model_file = os.path.join(det_model, "inference.pdmodel")
             det_params_file = os.path.join(det_model, "inference.pdiparams")
@@ -109,6 +141,7 @@ class OCRApp(QWidget):
             rec_model_file = os.path.join(rec_model, "inference.pdmodel")
             rec_params_file = os.path.join(rec_model, "inference.pdiparams")
             rec_label_file = rec_label_file
+
 
             det_model = fd.vision.ocr.DBDetector(
                 det_model_file, det_params_file, runtime_option=det_option)
@@ -121,11 +154,12 @@ class OCRApp(QWidget):
 
             # 创建PP-OCR，串联3个模型，其中cls_model可选，如无需求，可设置为None
             ppocr_v3 = fd.vision.ocr.PPOCRv3(
-                det_model=det_model, cls_model=cls_model, rec_model=rec_model)
+                det_model=det_model, cls_model=None, rec_model=rec_model)
 
             # 给cls和rec模型设置推理时的batch size
             # 此值能为-1, 和1到正无穷
             # 当此值为-1时, cls和rec模型的batch size将默认和det模型检测出的框的数量相同
+
             ppocr_v3.cls_batch_size = cls_bs
             ppocr_v3.rec_batch_size = rec_bs
             # 预测图片准备
