@@ -14,7 +14,8 @@ Cores, 48 Tensor Cores, 2 NVDLA engines, 6 ARM CPU cores, and 8 GB of 128-bit LP
 
 
 
-#Python package Compilation and Installation
+# Python package Compilation and Installation
+
 The compilation process also requires that
 
 gcc/g++ >= 5.4 (8.2 recommended)
@@ -47,7 +48,8 @@ python setup.py bdist_wheel
 
 The compiled wheel package will be generated in the FastDeploy/python/dist directory when the compilation is done, just pip install it directly.
 
-#OCR recognition processes.
+# OCR recognition processes.
+
 Divided into 3 models: Det text detection model, cls text direction detection model, rec text recognition model. Support CPU and GPU and TensorRT usage. The models use Paddle's pre-trained models, and use Fastdeploy for model deployment calls, which is convenient and fast. fastdeploy supports CPU inference for ONNXRuntime, GPU inference for TensorRT, and PaddleInference by default.
 
 We use TensorRT's GPU inference. The first run requires generating Paddle's text detection, orientation recognition, and text recognition models as trt files, which is slow and has been uploaded as detailed in the GitHub repository. Generating the model for subsequent inference is faster.
